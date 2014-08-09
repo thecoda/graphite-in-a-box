@@ -24,5 +24,7 @@ include statsd
 include grafana
 include elasticsearch
 include graphitepoller
+include collectd
+
 
 
