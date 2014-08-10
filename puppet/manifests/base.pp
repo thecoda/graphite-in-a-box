@@ -22,9 +22,8 @@ include carbon
 include graphite
 include statsd
 include grafana
-include elasticsearch
 include graphitepoller
 include collectd
-
+include influxdb
 
 

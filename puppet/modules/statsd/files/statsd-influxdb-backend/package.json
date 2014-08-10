@@ -1,0 +1,35 @@
+{
+  "name": "statsd-influxdb-backend",
+  "version": "0.2.0",
+  "description": "InfluxDB backend for StatsD",
+  "main": "lib/influxdb.js",
+  "dependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/bernd/statsd-influxdb-backend.git"
+  },
+  "keywords": [
+    "influxdb",
+    "statsd",
+    "metrics"
+  ],
+  "author": {
+    "name": "Bernd Ahlers",
+    "email": "bernd@tuneafish.de"
+  },
+  "license": "BSD",
+  "bugs": {
+    "url": "https://github.com/bernd/statsd-influxdb-backend/issues"
+  },
+  "readme": "StatsD InfluxDB backend\n-----------------------\n\nA naive [InfluxDB](http://influxdb.org/) backend for\n[StatsD](https://github.com/etsy/statsd).\n\nIt can ship events to InfluxDB using two different strategies which can be\nused at the same time.\n\n### Regular Flush Strategy\n\nStatsD will flush aggregated metrics with a configured interval. This is\nthe regular StatsD mode of operation.\n\n### Proxy Strategy\n\nThis will map every incoming StatsD packet to an InfluxDB event. It's useful\nif you want to store the raw events in InfluxDB without any rollups.\n\n## CAVEATS\n\nThis is pretty young and I do not have much experience with InfluxDB yet.\nEspecially the event buffering and the event mapping might be problematic\nand inefficient.\n\nInfluxDB is also pretty young and there might be breaking changes until it\nreaches 1.0.\n\nPlease be careful!\n\n## Installation\n\n    $ cd /path/to/statsd\n    $ npm install statsd-influxdb-backend\n\n## Configuration\n\nYou can configure the following settings in your StatsD config file.\n\n```js\n{\n  influxdb: {\n    host: '127.0.0.1',   // InfluxDB host. (default 127.0.0.1)\n    port: 8086,          // InfluxDB port. (default 8086)\n    database: 'dbname',  // InfluxDB database instance. (required)\n    username: 'user',    // InfluxDB database username. (required)\n    password: 'pass',    // InfluxDB database password. (required)\n    flush: {\n      enable: true       // Enable regular flush strategy. (default true)\n    },\n    proxy: {\n      enable: false,       // Enable the proxy strategy. (default false)\n      suffix: 'raw',       // Metric name suffix. (default 'raw')\n      flushInterval: 1000  // Flush interval for the internal buffer.\n                           // (default 1000)\n    }\n  }\n}\n```\n\n## Activation\n\nAdd the `statsd-influxdb-backend` to the list of StatsD backends in the config\nfile and restart the StatsD process.\n\n```js\n{\n  backends: ['./backends/graphite', 'statsd-influxdb-backend']\n}\n```\n\n## Unsupported Metric Types (Proxy Strategy)\n\n* Counter with sampling.\n* Signed gauges. (i.e. `bytes:+4|g`)\n* Sets\n\n## InfluxDB Event Mapping\n\nStatsD packets are currently mapped to the following InfluxDB events. This is\na first try and I'm open to suggestions to improve this.\n\n### Counter\n\nStatsD packet `requests:1|c` as InfluxDB event:\n\n#### Flush Strategy\n\n```js\n[\n  {\n    name: 'requests.counter',\n    columns: ['value', 'time'],\n    points: [[802, 1384798553000]]\n  }\n]\n```\n\n#### Proxy Strategy\n\n```js\n[\n  {\n    name: 'requests.counter.raw',\n    columns: ['value', 'time'],\n    points: [[1, 1384472029572]]\n  }\n]\n```\n\n### Timing\n\nStatsD packet `response_time:170|ms` as InfluxDB event:\n\n#### Flush Strategy\n\n```js\n[\n  {\n    name: 'response_time.timer.mean_90',\n    columns: ['value', 'time'],\n    points: [[445.25761772853184, 1384798553000]]\n  },\n  {\n    name: 'response_time.timer.upper_90',\n    columns: ['value', 'time'],\n    points: [[905, 1384798553000]]\n  },\n  {\n    name: 'response_time.timer.sum_90',\n    columns: ['value', 'time'],\n    points: [[321476, 1384798553000]]\n  },\n  {\n    name: 'response_time.timer.std',\n    columns: ['value', 'time'],\n    points: [[294.4171159604542, 1384798553000]]\n  },\n  {\n    name: 'response_time.timer.upper',\n    columns: ['value', 'time'],\n    points: [[998, 1384798553000]]\n  },\n  {\n    name: 'response_time.timer.lower',\n    columns: ['value', 'time'],\n    points: [[2, 1384798553000]]\n  },\n  {\n    name: 'response_time.timer.count',\n    columns: ['value', 'time'],\n    points: [[802, 1384798553000]]\n  },\n  {\n    name: 'response_time.timer.count_ps',\n    columns: ['value', 'time'],\n    points: [[80.2, 1384798553000]]\n  },\n  {\n    name: 'response_time.timer.sum',\n    columns: ['value', 'time'],\n    points: [[397501, 1384798553000]]\n  },\n  {\n    name: 'response_time.timer.mean',\n    columns: ['value', 'time'],\n    points: [[495.6371571072319, 1384798553000]]\n  },\n  {\n    name: 'response_time.timer.median',\n    columns: ['value', 'time'],\n    points: [[483, 1384798553000]]\n  }\n]\n```\n\n#### Proxy Strategy\n\n```js\n[\n  {\n    name: 'response_time.timer.raw',\n    columns: ['value', 'time'],\n    points: [[170, 1384472029572]]\n  }\n]\n```\n\n### Gauges\n\nStatsD packet `bytes:123|g` as InfluxDB event:\n\n#### Flush Strategy\n\n```js\n[\n  {\n    name: 'bytes.gauge',\n    columns: ['value', 'time'],\n    points: [[123, 1384798553000]]\n  }\n]\n```\n\n#### Proxy Strategy\n\n```js\n[\n  {\n    name: 'bytes.gauge.raw',\n    columns: ['value', 'time'],\n    points: [['gauge', 123, 1384472029572]]\n  }\n]\n```\n\n## Proxy Strategy Notes\n\n### Event Buffering\n\nTo avoid one HTTP request per StatsD packet, the InfluxDB backend buffers the\nincoming events and flushes the buffer on a regular basis. The current default\nis 1000ms. Use the `influxdb.proxy.flushInterval` to change the interval.\n\nThis might become a problem with lots of incoming events.\n\nThe payload of a HTTP request might look like this:\n\n```js\n[\n  {\n    name: 'requests.counter.raw',\n    columns: ['value', 'time'],\n    points: [\n      [1, 1384472029572],\n      [1, 1384472029573],\n      [1, 1384472029580]\n    ]\n  },\n  {\n    name: 'response_time.timer.raw',\n    columns: ['value', 'time'],\n    points: [\n      [170, 1384472029570],\n      [189, 1384472029572],\n      [234, 1384472029578],\n      [135, 1384472029585]\n    ]\n  },\n  {\n    name: 'bytes.gauge.raw',\n    columns: ['value', 'time'],\n    points: [\n      [123, 1384472029572],\n      [123, 1384472029580]\n    ]\n  }\n]\n```\n\n## Contributing\n\nAll contributions are welcome: ideas, patches, documentation, bug reports,\ncomplaints, and even something you drew up on a napkin.\n",
+  "readmeFilename": "README.md",
+  "_id": "statsd-influxdb-backend@0.2.0",
+  "dist": {
+    "shasum": "34c32d9adea6dcbbe27be17091722c16a8f0c392"
+  },
+  "_from": "statsd-influxdb-backend@",
+  "_resolved": "https://registry.npmjs.org/statsd-influxdb-backend/-/statsd-influxdb-backend-0.2.0.tgz"
+}

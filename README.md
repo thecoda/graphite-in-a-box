@@ -25,7 +25,7 @@ Todo
 ----
 
 - pre-configure some nicer grafana defaults (e.g. a local collectd graph)
-- add influxdb to the installation
+- increase open-files limit, as per <http://docs.basho.com/riak/latest/ops/tuning/open-files-limit/>
 
 
 Ideas that need more research

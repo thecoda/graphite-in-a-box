@@ -8,7 +8,7 @@ class graphitepoller {
   service { graphite-poller :
     enable  => true,
     ensure  => running,
-    require => Package["graphite-carbon"],
+    require => Class["graphite"],
   }
 
 }

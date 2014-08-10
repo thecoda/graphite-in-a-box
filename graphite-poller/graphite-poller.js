@@ -39,12 +39,10 @@ function poll() {
   var numHosts = hosts.length;
   for (var i = 0; i < numHosts; i++) {
   	var host = hosts[i];
-  	console.log("polling host: [%s] on port: [%d]", host.hostname, host.port);
     var req = https.get(host, onHttpResponse);
     var errFunc = function(host) {
       return function(err) { 
-        var errMsg = util.format("When polling host: [%s] on port: [%d]", host.hostname, host.port);
-        console.error(errMsg);
+        console.error("When polling host [%s] on port [%d]", host.hostname, host.port);
         console.error(err);
       };
     };
