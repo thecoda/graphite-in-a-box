@@ -8,9 +8,10 @@ Where possible I've used the latest version of all components and harvested best
 This setup (at the time of writing) consists of:
 
 - Ubuntu 14.04 (Trusty Tahir) LTS
-- Graphite 0.9.12
+- Graphite (carbon + graphite-web) v0.9.12
 - Postgres (for the Graphite DB, instead of the default SQLite)
-- The [Grafana](http://grafana.org/) front-end
+- Memcached for carbon caching
+- The [Grafana](http://grafana.org/) front-end, version 1.7.0-rc1
 - Elasticsearch (for saving grafana dashboards)
 - openjdk-7 (required for elasticsearch)
 - statsd 0.6.0, configured to NOT use the legacy namespace
@@ -18,19 +19,21 @@ This setup (at the time of writing) consists of:
 - A reasonable schema and aggregation configuration, specifically customised for codahale-metrics and statsd
 - My own graphite-poller application, which will poll JSON endpoints in the format used by [codahale-metrics](http://metrics.codahale.com/) and feed the information to graphite.
 
-Once installed, just head over to <http://localhost:8080/grafana> to start playing.
+Once installed, just head over to <http://localhost:8080/grafana/> to start playing.
 
 Todo
 ----
 
-- pre-configure some nicer grafana defaults (e.g. a statsd graph)
-- run collectd on the graphite server
+- pre-configure some nicer grafana defaults (e.g. a local collectd graph)
+- add influxdb to the installation
 
 
 Ideas that need more research
 -----------------------------
 
-could graphite-poller to send to statsd instead of directly to graphite?
-  (example at <https://github.com/etsy/statsd>)
+- could graphite-poller to send to statsd instead of directly to graphite? (example at <https://github.com/etsy/statsd>)
+- Better still... Why not push directly to influxDB, and bypass graphite entirely?
+- While we're at it, configure statsd to push to influxdb instead of graphite
+- How easy would it be to make graphite/influxdb configurable as a gobal option?
 
 
