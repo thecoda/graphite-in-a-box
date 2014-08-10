@@ -1,4 +1,4 @@
-class grafana($version = '1.6.1') {
+class grafana($version = '1.7.0-rc1') {
 
   $grafana_url = "http://grafanarel.s3.amazonaws.com/grafana-${version}.tar.gz"
   
