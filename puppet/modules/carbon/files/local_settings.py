@@ -8,7 +8,7 @@ TIME_ZONE = 'Europe/London'
 SECRET_KEY = 'can_i_kick_it'
 
 # Setting MEMCACHE_HOSTS to be empty will turn off use of memcached entirely
-#MEMCACHE_HOSTS = ['127.0.0.1:11211']
+MEMCACHE_HOSTS = ['127.0.0.1:11211']
 
 # Sometimes you need to do a lot of rendering work but cannot share your storage mount
 #REMOTE_RENDERING = True

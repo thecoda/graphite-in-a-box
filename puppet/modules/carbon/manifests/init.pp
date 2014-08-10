@@ -1,6 +1,6 @@
 class carbon {
 
-  package { [ postgresql, libpq-dev, python-psycopg2, graphite-carbon ]:
+  package { [ postgresql, libpq-dev, python-psycopg2, graphite-carbon, memcached ]:
     ensure => latest;
   } ->
   
