@@ -7,6 +7,9 @@ var net = require('net');
 var util = require('util');
 var https = require('https');
 var createSource = require('stream-json');
+var LazySocket = require('lazy-socket');
+
+var graphiteSocket = LazySocket.createConnection(2003, '127.0.0.1');
 
 var config = JSON.parse( fs.readFileSync('config.js')  );
 
@@ -73,12 +76,15 @@ function onHttpResponse(host) {
     var objName = '';
 
     var buffer = '';
+    var addToBuffer = function(str) {
+      if(buffer == '') buffer = str;
+      else buffer = [buffer, str].join("\n");      
+    }
 
     var processMetric = function(value) {
       if(objName == '') return;
       var str = formatMetric(host.prefix, objName, key, value, ts);
-      if(buffer == '') buffer = str;
-      else buffer = [buffer, str].join("\n");
+      addToBuffer(str);
     };
 
     var jsonSrc =
@@ -99,7 +105,8 @@ function onHttpResponse(host) {
 };
 
 function sendToGraphite(text) {
-  var graphite = net.connect({port: 2003, host: '127.0.0.1'}, function() {
-    graphite.end(text, 'utf-8');
-  }).on('error', logErr);
+  graphiteSocket.write(text, 'utf-8', function(err) {
+    if (typeof err === 'undefined') {} // do nothing
+    else logErr(err.name + ": " + err.message);
+  });
 };
