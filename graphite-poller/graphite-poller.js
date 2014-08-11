@@ -63,6 +63,8 @@ function formatMetric(prefix, obj, m, v, ts) {
 
 function onHttpResponse(host) {
   return function (res) {
+    res.setEncoding('utf8');
+
     res.on('error', logErr);
 
     var ts = timestamp();
@@ -70,11 +72,13 @@ function onHttpResponse(host) {
     var key = '';
     var objName = '';
 
+    var buffer = '';
+
     var processMetric = function(value) {
       if(objName == '') return;
-
       var str = formatMetric(host.prefix, objName, key, value, ts);
-      sendToGraphite(str.concat('\n'));
+      if(buffer == '') buffer = str;
+      else buffer = [buffer, str].join("\n");
     };
 
     var jsonSrc =
@@ -88,12 +92,15 @@ function onHttpResponse(host) {
 
 
     res.pipe(jsonSrc.input);
+    res.on('end', function() {
+      sendToGraphite(buffer);
+    });
   };
 };
 
-function sendToGraphite(line) {
+function sendToGraphite(text) {
+  console.log(text);
   var graphite = net.connect({port: 2003, host: '127.0.0.1'}, function() {
-    graphite.write(line);
-    graphite.end();
+    graphite.end(text, 'utf-8');
   }).on('error', logErr);
 };
