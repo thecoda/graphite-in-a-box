@@ -75,16 +75,10 @@ function onHttpResponse(host) {
     var key = '';
     var objName = '';
 
-    var buffer = '';
-    var addToBuffer = function(str) {
-      if(buffer == '') buffer = str;
-      else buffer = [buffer, str].join("\n");      
-    }
-
     var processMetric = function(value) {
       if(objName == '') return;
       var str = formatMetric(host.prefix, objName, key, value, ts);
-      addToBuffer(str);
+      sendToGraphite(str + "\n");
     };
 
     var jsonSrc =
@@ -98,9 +92,6 @@ function onHttpResponse(host) {
 
 
     res.pipe(jsonSrc.input);
-    res.on('end', function() {
-      sendToGraphite(buffer);
-    });
   };
 };
 
