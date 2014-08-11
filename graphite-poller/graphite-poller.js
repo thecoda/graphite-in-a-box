@@ -15,13 +15,14 @@ function mkHosts() {
   var numHosts = config.hosts.length;
   for (var i = 0; i < numHosts; i++) {
   	var host = config.hosts[i];
-    console.log("Will poll host: [%s] on port: [%d]", host.name, host.port);
+    console.log("Will poll host: [%s] prefix: [%s] on port: [%d]", host.name, host.prefix, host.port);
   	var options = {
+      prefix:             host.prefix,
       hostname:           host.name,
       port:               host.port,
       path:               '/metrics',
       method:             'GET',
-      rejectUnauthorized: false
+      rejectUnauthorized: false      
     };
   	arr.push(options);    
   }
@@ -39,7 +40,7 @@ function poll() {
   var numHosts = hosts.length;
   for (var i = 0; i < numHosts; i++) {
   	var host = hosts[i];
-    var req = https.get(host, onHttpResponse);
+    var req = https.get(host, onHttpResponse(host));
     var errFunc = function(host) {
       return function(err) { 
         console.error("When polling host [%s] on port [%d]", host.hostname, host.port);
@@ -55,33 +56,39 @@ function timestamp() {
   return Math.floor(d.valueOf() / 1000);
 };
 
-function formatMetric(obj, m, v, ts) { return util.format("%s.%s %s %s", obj, m, v, ts); };
+function formatMetric(prefix, obj, m, v, ts) {
+  if (prefix == '') return util.format("%s.%s %s %s", obj, m, v, ts);
+  else return util.format("%s.%s.%s %s %s", prefix, obj, m, v, ts);
+};
 
-function onHttpResponse(res) {
-  res.on('error', logErr);
+function onHttpResponse(host) {
+  return function (res) {
+    res.on('error', logErr);
 
-  var ts = timestamp();
+    var ts = timestamp();
 
-  var key = '';
-  var objName = '';
+    var key = '';
+    var objName = '';
 
-  var processMetric = function(value) {
-    if(objName == '') return;
-    var str = formatMetric(objName, key, value, ts);
-    sendToGraphite(str.concat('\n'));
+    var processMetric = function(value) {
+      if(objName == '') return;
+
+      var str = formatMetric(host.prefix, objName, key, value, ts);
+      sendToGraphite(str.concat('\n'));
+    };
+
+    var jsonSrc =
+      createSource()
+        .on("keyValue",    function(value){ key     = value; })
+        .on("startObject", function()     { objName = key;   })
+        .on("endObject",   function()     { objName = '';    })
+        .on("stringValue", processMetric)
+        .on("numberValue", processMetric)
+        .on('error',       logErr);
+
+
+    res.pipe(jsonSrc.input);
   };
-
-  var jsonSrc =
-    createSource()
-      .on("keyValue",    function(value){ key     = value; })
-      .on("startObject", function()     { objName = key;   })
-      .on("endObject",   function()     { objName = '';    })
-      .on("stringValue", processMetric)
-      .on("numberValue", processMetric)
-      .on('error',       logErr);
-
-
-  res.pipe(jsonSrc.input);
 };
 
 function sendToGraphite(line) {
