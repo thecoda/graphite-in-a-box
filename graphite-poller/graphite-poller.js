@@ -99,7 +99,6 @@ function onHttpResponse(host) {
 };
 
 function sendToGraphite(text) {
-  console.log(text);
   var graphite = net.connect({port: 2003, host: '127.0.0.1'}, function() {
     graphite.end(text, 'utf-8');
   }).on('error', logErr);
